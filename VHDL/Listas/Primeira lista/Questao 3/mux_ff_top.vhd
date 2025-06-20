@@ -14,35 +14,47 @@ entity mux_ff_top is
     );
 end mux_ff_top;
 
-architecture rtl of mux_ff_top is
-    signal y_case_selected : std_logic_vector(7 downto 0);
-    signal y_if_selected : std_logic_vector(7 downto 0);
-    signal y_when_selected : std_logic_vector(7 downto 0);
-    signal y_with_selected : std_logic_vector(7 downto 0);
+
+-- Arquitetura com MUX usando CASE
+architecture rtl_case of mux_ff_top is
+    signal y : std_logic_vector(7 downto 0);
 begin
+    mux_inst: entity work.mux4x1_8bit(use_case)
+        port map (sel => sel, a => a, b => b, c => c, d => d, y => y);
 
-    -- Mux usando uma arquitetura "use_with"
-    mux_inst: entity work.mux4x1_8bit(use_with)
-        port map (
-            sel     => sel,
-            a       => a,
-            b       => b,
-            c       => c,
-            d       => d,
-            y_case  => y_case_selected,
-            y_if    => y_if_selected,
-            y_when  => y_when_selected,
-            y_with  => y_with_selected
-        );
-
-    -- Flip-flop D
     dff_inst: entity work.dff_8bit
-        port map (
-            clk => clk,
-            ce  => ce,
-            rst => rst,
-            d   => y_case_selected,
-            q   => q_out
-        );
+        port map (clk => clk, ce => ce, rst => rst, d => y, q => q_out);
+end rtl_case;
 
-end rtl;
+-- Arquitetura com MUX usando IF-ELSIF
+architecture rtl_if of mux_ff_top is
+    signal y : std_logic_vector(7 downto 0);
+begin
+    mux_inst: entity work.mux4x1_8bit(use_if)
+        port map (sel => sel, a => a, b => b, c => c, d => d, y => y);
+
+    dff_inst: entity work.dff_8bit
+        port map (clk => clk, ce => ce, rst => rst, d => y, q => q_out);
+end rtl_if;
+
+-- Arquitetura com MUX usando WHEN-ELSE
+architecture rtl_when of mux_ff_top is
+    signal y : std_logic_vector(7 downto 0);
+begin
+    mux_inst: entity work.mux4x1_8bit(use_when)
+        port map (sel => sel, a => a, b => b, c => c, d => d, y => y);
+
+    dff_inst: entity work.dff_8bit
+        port map (clk => clk, ce => ce, rst => rst, d => y, q => q_out);
+end rtl_when;
+
+-- Arquitetura com MUX usando WITH-SELECT
+architecture rtl_with of mux_ff_top is
+    signal y : std_logic_vector(7 downto 0);
+begin
+    mux_inst: entity work.mux4x1_8bit(use_with)
+        port map (sel => sel, a => a, b => b, c => c, d => d, y => y);
+
+    dff_inst: entity work.dff_8bit
+        port map (clk => clk, ce => ce, rst => rst, d => y, q => q_out);
+end rtl_with;

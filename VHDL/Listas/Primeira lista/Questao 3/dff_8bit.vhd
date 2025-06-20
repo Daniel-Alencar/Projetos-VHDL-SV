@@ -7,7 +7,6 @@ use ieee.numeric_std.all;
 --===========================--
 entity dff_8bit is
     Port (
-        -- ERRO ESTÁ AQUI
         clk : in std_logic;
         ce  : in std_logic;
         rst : in std_logic;
