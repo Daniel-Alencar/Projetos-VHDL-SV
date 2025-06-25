@@ -12,7 +12,6 @@ module uart_tx #(parameter DATA_BITS = 8, STOP_BITS = 1) uart_tx(
     stop = 2'b11;
 
   // Declaração dos registradores
-
   reg tx_reg = 1'b1;
   reg next_tx;
   reg ready_reg, next_ready;

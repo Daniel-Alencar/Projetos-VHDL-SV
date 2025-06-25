@@ -26,7 +26,20 @@ module clock #(parameter BAUD_RATE = 9600) (
   reg clk_reg = 1'b0;
 
   always @(posedge pll_clk, negedge n_rst) begin
-    
+    if(~n_rst)
+      clk_cnt <= 0;
+    else begin
+      if(clk_cnt == clk_div) begin
+        clk_reg <= ~clk_reg;
+        clk_cnt <= 0;
+      end
+      else
+        clk_cnt <= 0;
+    end
+    else
+      clk_cnt <= clk_cnt + 1;
   end
+
+  assign clk = clk_reg;
 
 endmodule
