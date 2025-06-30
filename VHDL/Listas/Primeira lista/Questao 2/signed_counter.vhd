@@ -20,7 +20,8 @@ begin
             -- Atribui 0 para cada bit
             count <= (others => '0');
         elsif rising_edge(clk) then
-            -- Não é preciso verificar se chegou no limite porque o tipo "signed" já faz o ciclo automaticamente. Ele implementa o que se chama "wrap-around"
+            -- Não é preciso verificar se chegou no limite porque o tipo "signed"
+            -- já faz o ciclo automaticamente.
             count <= count + 1;
         end if;
     end process;

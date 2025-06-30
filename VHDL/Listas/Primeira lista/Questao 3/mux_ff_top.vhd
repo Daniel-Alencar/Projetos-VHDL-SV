@@ -2,9 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
---===========================--
--- Top-level: MUX + FF      --
---===========================--
+-- MUX e FF
 entity mux_ff_top is
     Port (
         clk, ce, rst : in std_logic;

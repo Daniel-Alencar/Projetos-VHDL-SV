@@ -33,7 +33,6 @@ begin
         wait;
     end process;
 
-    -- Instância do DUT
     dut: entity work.mux_ff_quad_top(rtl)
         port map (
             clk => clk,
@@ -47,7 +46,6 @@ begin
             q_with => q_with
         );
 
-    -- Processo de estímulos
     stimulus_proc: process
     begin
         -- Reset inicial
@@ -57,7 +55,7 @@ begin
         rst <= '0';
         ce <= '1';
 
-        -- Preenche o bus_array com valores fixos (conjunto 1)
+        -- Altera entradas
         for i in 0 to 15 loop
             bus_array(i) <= std_logic_vector(to_unsigned(16#A0# + i, 8));
         end loop;
@@ -68,12 +66,12 @@ begin
             wait for clk_period;
         end loop;
 
-        -- Altera entradas (conjunto 2)
+        -- Altera entradas
         for i in 0 to 15 loop
             bus_array(i) <= std_logic_vector(to_unsigned(16#10# * i, 8));
         end loop;
 
-        -- Testa seletores 00 a 11 novamente
+        -- Testa seletores 00 a 11
         for i in 0 to 3 loop
             sel <= std_logic_vector(to_unsigned(i, 2));
             wait for clk_period;
@@ -84,7 +82,7 @@ begin
         wait for clk_period;
         rst <= '0';
 
-        -- Clock enable desativado — saídas não devem mudar
+        -- Clock enable desativado (saídas não devem mudar)
         ce <= '0';
         sel <= "10";
         wait for clk_period;

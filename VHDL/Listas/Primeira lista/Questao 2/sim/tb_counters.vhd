@@ -33,7 +33,6 @@ begin
         wait;
     end process;
 
-    -- Instanciando contadores
     int_inst : entity work.integer_counter
         port map (
             clk => clk,

@@ -9,7 +9,7 @@ end tb_mult;
 
 architecture sim of tb_mult is
 
-    -- Clock & controle
+    -- Clock e controle
     signal clk   : std_logic := '0';
     signal rst   : std_logic := '0';
     signal ce    : std_logic := '0';
@@ -20,12 +20,12 @@ architecture sim of tb_mult is
     signal output_par     : int_array(0 to 3);
     signal output_seq     : int_array(0 to 3);
 
-    -- Clock period
+    -- Período de clock
     constant clk_period : time := 10 ns;
 
 begin
 
-    -- Clock generation
+    -- Geração de clock
     clk_proc : process
     begin
         while now < 1000 ns loop
@@ -56,7 +56,6 @@ begin
             done     => done
         );
 
-    -- Estímulo
     stim_proc : process
     begin
         rst <= '1'; ce <= '0'; wait for clk_period;
@@ -65,6 +64,9 @@ begin
         -- CASO DE TESTE 1
         input_v <= (1, 2, 3, 4, 5, 6, 7, 8);
         wait for clk_period;
+
+        -- Cálculo paralelo termina
+        -- Cálculo sequencial começa
 
         -- Aguarda cálculo sequencial terminar
         wait until done = '1';
@@ -90,6 +92,10 @@ begin
         input_v <= (10, 20, -3, 7, 0, 100, -8, -1);
         wait for clk_period;
 
+        -- Cálculo paralelo termina
+        -- Cálculo sequencial começa
+
+        -- Aguarda cálculo sequencial terminar
         wait until done = '1';
         wait for clk_period;
 

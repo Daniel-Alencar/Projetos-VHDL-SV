@@ -2,9 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
---====================--
--- Entidade do MUX   --
---====================--
+-- MUX
 entity mux4x1_8bit is
     Port (
         sel        : in std_logic_vector(1 downto 0);

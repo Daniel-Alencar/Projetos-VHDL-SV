@@ -10,7 +10,9 @@ entity mult_sequencial is
         ce       : in std_logic;
         input_v  : in int_array(0 to 7);
         output_v : out int_array(0 to 3);
-        done     : out std_logic  -- Sinaliza fim das multiplicações
+
+        -- Sinaliza fim das multiplicações
+        done     : out std_logic
     );
 end entity;
 
@@ -38,7 +40,7 @@ begin
         end if;
     end process;
 
-    -- Lógica da FSM
+    -- Lógica da máquina de estados
     process(state, i)
     begin
         case state is
@@ -75,6 +77,7 @@ begin
                     when LOAD =>
                         i <= 0;
 
+                    -- Cálculos
                     when CALC =>
                         output_reg(i) <= input_v(2*i) * input_v(2*i + 1);
                         i <= i + 1;

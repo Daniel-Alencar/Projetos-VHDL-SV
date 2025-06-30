@@ -11,12 +11,11 @@ architecture sim of tb_bidirectional_signal is
     signal c : std_logic := 'Z';
     signal d : std_logic;
 
-    -- Sinais de controle para simular escrita nos barramentos
+    -- Sinais para simular escrita nos barramentos
     signal b_drive : std_logic := 'Z';
     signal c_drive : std_logic := 'Z';
 
 begin
-    -- Conexão à DUT (Device Under Test)
     uut: entity work.bidirectional_signal
         port map (
             a => a,
@@ -25,12 +24,10 @@ begin
             d => d
         );
 
-    -- Simula os sinais bidirecionais usando drivers auxiliares
-    -- Evita conflito de múltiplos drivers em `b` e `c`
+    -- Simula os sinais bidirecionais
     b <= b_drive when b_drive /= 'Z' else 'Z';
     c <= c_drive when c_drive /= 'Z' else 'Z';
 
-    -- Processo de estímulos
     stim_proc: process
     begin
         -- Teste 1: a = '0' para c envia para b
@@ -61,7 +58,6 @@ begin
         assert c = '0' report "Erro: c não recebeu b = '0'" severity error;
         assert d = '1' report "Erro: d deveria ser not c = '1'" severity error;
 
-        -- Finaliza simulação
         report "Testbench finalizado com sucesso." severity note;
         wait;
     end process;

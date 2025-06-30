@@ -15,7 +15,6 @@ architecture rtl of integer_counter is
     signal count : integer range -128 to 127 := 0;
 begin
 
-    -- Todos os processos ocorrem de forma paralela
     -- O processo de contagem sempre acontece quando houver uma transição em clk ou reset
     process(clk, reset)
     begin
@@ -26,13 +25,11 @@ begin
                 -- Para reiniciar no limite inferior
                 count <= -128; 
             else
-                -- Só depois que o processo terminar é que a nova atribuição será efetivada
                 count <= count + 1;
             end if;
         end if;
     end process;
 
-    -- Atribuição de count para output sempre
-    -- output assim, sempre reflete o valor de count
+    -- output sempre reflete o valor de count
     output <= count;
 end architecture;

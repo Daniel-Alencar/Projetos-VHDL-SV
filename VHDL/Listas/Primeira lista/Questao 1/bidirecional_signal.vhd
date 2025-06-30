@@ -21,7 +21,7 @@ begin
     -- Buffer 3-state para b: habilitado quando a = '0' (c -> b)
     b <= c when a = '0' else 'Z';
 
-    -- Lógica da saída d: inverso do valor atual de c (quando lido)
+    -- inverso do valor atual de c
     d <= not c;
 
 end architecture;

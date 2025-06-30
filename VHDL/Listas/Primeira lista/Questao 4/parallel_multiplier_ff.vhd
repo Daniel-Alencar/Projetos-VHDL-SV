@@ -16,7 +16,7 @@ architecture rtl of mult_parallel is
     signal output_reg : int_array(0 to 3);
 begin
 
-    -- Saída registrada
+    -- Saída
     output_v <= output_reg;
 
     process(clk)
@@ -25,6 +25,7 @@ begin
             if rst = '1' then
                 output_reg <= (others => 0);
             elsif ce = '1' then
+                -- Cálculos
                 for i in 0 to 3 loop
                     output_reg(i) <= input_v(2*i) * input_v(2*i + 1);
                 end loop;
