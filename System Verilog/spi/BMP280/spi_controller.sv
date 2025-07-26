@@ -31,6 +31,8 @@ module spi_controller (
     logic [7:0] spi_tx_data, spi_rx_data;
     logic spi_done;
 
+    logic SS_internal;
+
     // Instância do spi_master
     spi_master spi_inst (
         .clk(clk),
@@ -46,14 +48,14 @@ module spi_controller (
         .SS(SS_internal)
     );
 
-    logic SS_internal;
+    
 
     // Controle de SS externo baseado no tied_SS
     assign SS = tied_SS ? 
       SS_internal : (state == SEND ? SS_internal : 1'b1);
 
     // FSM de controle
-    always_ff @(posedge clk or posedge rst) begin
+    always @(posedge clk or posedge rst) begin
         if (rst) begin
             state <= IDLE;
             word_index <= 0;
@@ -73,7 +75,7 @@ module spi_controller (
     end
 
     // Transição de estados
-    always_comb begin
+    always @(*) begin
         next_state = state;
         spi_start = 0;
         spi_tx_data = tx_data[word_index];

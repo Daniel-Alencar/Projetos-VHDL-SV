@@ -30,7 +30,8 @@ pll PLL_U0(
     .sys_clk(sys_clk),
     // saídas
     .pll_clk(pll_clk),
-    .pll_lock(pll_lock) // não usado
+    // não usado
+    .pll_lock(pll_lock) 
 );
 
 clock_div #(.CLK_IN(PLL_FREQ), .CLK_OUT(UART_OVERSAMPLING*UART_BAUD_RATE)) CLK_DIV_U0(
@@ -84,7 +85,8 @@ uart_rx #(.DATA_BITS(DATA_BITS), .STOP_BITS(UART_STOP_BITS), .OVERSAMPLING(UART_
     .n_rst(n_rst),
     .rx(rx),
     // saídas
-    .ready_out(),  // não usado
+    // não usado
+    .ready_out(),
     .valid_out(uart_rx_ctrl_valid),    
     .data_out(uart_rx_ctrl_data)
 );

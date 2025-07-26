@@ -5,7 +5,7 @@ module uart_rx #(parameter DATA_BITS=8, STOP_BITS=1, OVERSAMPLING=16)(
 );
 
 // Declaração dos estados simbólicos
-localparam reg [1:0]
+localparam [1:0]
     idle = 2'b00,
     start = 2'b01,
     data = 2'b10,
@@ -16,7 +16,9 @@ reg ready_reg, next_ready;
 reg valid_reg, next_valid;
 reg [DATA_BITS-1:0] data_reg, next_data;
 reg [1:0] state, next_state;
+// Até 32 contagens de clock
 reg [$clog2((OVERSAMPLING*2)-1)-1:0] clk_cnt, next_clk;
+// Até 8 contagens de bit
 reg [2:0] bit_cnt, next_bit;
 
 // Registradores da máquina de estados para o receptor UART

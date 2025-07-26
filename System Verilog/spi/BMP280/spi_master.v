@@ -7,7 +7,7 @@ module spi_master #(parameter DATA_BITS=8, CPOL=0, CPHA=1, BRDV=4, LSBF=0)(
 );
 
 // Declaração dos estados simbólicos
-localparam reg [1:0]
+localparam [1:0]
 idle = 2'b00,
 data = 2'b01,
 trail = 2'b10;
