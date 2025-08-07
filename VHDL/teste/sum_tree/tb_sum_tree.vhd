@@ -2,30 +2,29 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.custom_types.all;  -- Importa N_WORD e signed_array
+use work.custom_types.all;
 
 entity tb_sum_tree is
 end tb_sum_tree;
 
 architecture sim of tb_sum_tree is
 
-    -- Configuração da árvore
-    constant N_SUMS : natural := 8;
+    constant N_INPUTS : natural := 8;
 
     -- Sinais de teste
     signal clk     : std_logic := '0';
     signal rst     : std_logic := '0';
-    signal entrada : signed_array(N_SUMS-1 downto 0);
+    signal entrada : signed_array(N_INPUTS-1 downto 0);
     signal resultado : signed(N_WORD-1 downto 0);
 
-    -- Valor esperado (calculado manualmente)
+    -- Valor esperado da soma
     signal soma_esperada : signed(N_WORD-1 downto 0);
 
 begin
 
     -- Instancia a unidade sob teste (UUT)
-    uut: entity work.sum_tree
-        generic map(N_SUMS => N_SUMS)
+    uut: entity work.sum_tree_for
+        generic map(N_INPUTS => N_INPUTS)
         port map(
             in_sums  => entrada,
             out_sum  => resultado,
@@ -45,6 +44,7 @@ begin
 
     -- Estímulo
     stim_proc : process
+        variable soma_tmp : signed(N_WORD-1 downto 0);
     begin
         -- Fase 1: Reset
         rst <= '0';
@@ -52,20 +52,25 @@ begin
         rst <= '1';
         wait for 10 ns;
 
-        -- Fase 2: Aplica entradas conhecidas
-        -- Exemplo: entrada(i) = to_signed(i+1, N_WORD)
-        for i in 0 to N_SUMS-1 loop
-            entrada(i) <= to_signed(i+1, N_WORD);
+        -- Fase 2: Aplica entradas conhecidas (valor 1 para cada entrada)
+        for i in 0 to N_INPUTS-1 loop
+            entrada(i) <= to_signed(1, N_WORD);
         end loop;
 
-        -- Calcula valor esperado na simulação
-        soma_esperada <= (others => '0');
-        for i in 0 to N_SUMS-1 loop
-            soma_esperada <= soma_esperada + to_signed(i+1, N_WORD);
+        -- Calcula valor esperado usando variável
+        soma_tmp := (others => '0');
+        for i in 0 to N_INPUTS-1 loop
+            soma_tmp := soma_tmp + to_signed(1, N_WORD);
         end loop;
+        soma_esperada <= soma_tmp;
 
         -- Espera alguns ciclos de clock para processamento
         wait for 30 ns;
+        
+        -- Comparação
+        assert resultado = soma_esperada
+            report "ERRO: resultado diferente do esperado!"
+            severity error;
 
         report "Teste passou com sucesso!" severity note;
         wait;

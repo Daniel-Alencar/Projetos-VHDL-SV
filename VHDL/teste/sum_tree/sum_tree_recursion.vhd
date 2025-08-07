@@ -4,7 +4,7 @@ use IEEE.std_logic_1164.all;
 
 use work.custom_types.all;
 
-entity sum_tree is
+entity sum_tree_recursion is
 generic(
     N_SUMS : natural := 2**6
 );
@@ -18,9 +18,9 @@ begin
     assert (N_SUMS mod 2) = 0 
     report "Number of sums must be power of two"
     severity failure; 
-end sum_tree;
+end sum_tree_recursion;
 
-architecture Behavorial of sum_tree is
+architecture Behavorial of sum_tree_recursion is
     signal left_sum : signed(N_WORD-1 downto 0) := (others=>'0');
     signal right_sum : signed(N_WORD-1 downto 0) := (others=>'0');
 begin
@@ -31,14 +31,14 @@ begin
     end generate base_case_gen;
     
     recursive_gen : if N_SUMS > 2 generate
-        left_sums : entity work.sum_tree 
+        left_sums : entity work.sum_tree_recursion 
             generic map(N_SUMS => N_SUMS/2) 
             port map(in_sums => in_sums(N_SUMS-1 downto N_SUMS/2),
                      out_sum => left_sum,
                      clk_in => clk_in,
                      reset_in => reset_in); 
 
-        right_sums : entity work.sum_tree 
+        right_sums : entity work.sum_tree_recursion 
             generic map(N_SUMS => N_SUMS/2) 
             port map(in_sums => in_sums(N_SUMS/2-1 downto 0),
                      out_sum => right_sum,
