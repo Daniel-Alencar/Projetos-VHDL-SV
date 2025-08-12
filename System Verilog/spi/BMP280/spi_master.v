@@ -1,7 +1,8 @@
 module spi_master #(parameter DATA_BITS=8, CPOL=0, CPHA=1, BRDV=4, LSBF=0)(
     input clk, n_rst, spi_en, tied_SS, MISO,
     input [DATA_BITS-1:0] data_in,
-    input [5:0] data_words, // limite máximo de 32 palavras sequenciais
+    // limite máximo de 32 palavras sequenciais
+    input [5:0] data_words, 
     output SCK, SS, MOSI, ready_out, valid_out,
     output [DATA_BITS-1:0] data_out
 );
@@ -18,7 +19,9 @@ reg [1:0] state, next_state;
 para determinar a quantidade mínima de bits necessária para expressar o valor de (.) */
 reg [$clog2(BRDV)-1:0] clk_cnt, next_clk;
 reg [$clog2(DATA_BITS)-1:0] bit_cnt, next_bit;
-reg [4:0] word_cnt, next_word;  // para 32 palavras sequenciais: contagem de 0 a 31
+
+// Para 32 palavras sequenciais: contagem de 0 a 31
+reg [4:0] word_cnt, next_word;
 reg SCK_reg, next_SCK;
 reg SS_reg, next_SS;
 reg [DATA_BITS-1:0] spi_data_reg, next_spi_data;
@@ -118,7 +121,8 @@ always @(*) begin
     endcase
 end
 
-// Lógica combinacional para os registradores de dados e para os sinais ready_out, valid_out e SS
+// Lógica combinacional para os registradores de dados 
+// e para os sinais ready_out, valid_out e SS
 always @(*) begin
     next_SS = SS_reg;
     next_spi_data = spi_data_reg;

@@ -1,4 +1,4 @@
-module sync_fifo_tb_test #(parameter DATA_BITS=8)(
+module sync_fifo_tb #(parameter DATA_BITS=8)(
     input clk_in, n_rst, fifo_empty_in, fifo_full_in, uart_rx_valid_in, uart_tx_ready_in,
     input [DATA_BITS-1:0] uart_rx_data_in, fifo_rd_data_in,    
     output reg fifo_wr_en, fifo_rd_en, uart_tx_en,
