@@ -15,10 +15,8 @@ trail = 2'b10;
 
 // Declaração dos registradores
 reg [1:0] state, next_state;
-/* 
-$clog2(.) = arredondamento superior da função logarítmica de (.) na base 2, usado
-para determinar a quantidade mínima de bits necessária para expressar o valor de (.)
-*/
+/* $clog2(.) = arredondamento superior da função logarítmica de (.) na base 2, usado
+para determinar a quantidade mínima de bits necessária para expressar o valor de (.) */
 reg [$clog2(BRDV)-1:0] clk_cnt, next_clk;
 reg [$clog2(DATA_BITS)-1:0] bit_cnt, next_bit;
 reg [4:0] word_cnt, next_word;
@@ -145,7 +143,7 @@ always_comb begin
                 next_spi_data = data_in;
             end
             else
-                next_ready = 1'b1;
+                next_ready = 1'b1;            
         end
     end
     data: begin
