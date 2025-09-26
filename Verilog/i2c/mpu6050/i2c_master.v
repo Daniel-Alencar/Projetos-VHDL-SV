@@ -10,7 +10,8 @@ module i2c_master #(parameter CLK_IN_FREQ_MHZ=10, SCL_FREQ_KHZ=100, RETRY_NUM=3)
     inout SCL, SDA
 );
 /*
-Cálculo dos parâmetros OVERSAMPLING e T_HD_CNT, considerando CLK_IN_FREQ entre 10 MHz e 100 MHz,
+Cálculo dos parâmetros OVERSAMPLING e T_HD_CNT, 
+considerando CLK_IN_FREQ entre 10 MHz e 100 MHz,
 múltiplo de 10 MHz, e SCL_FREQ entre 1 kHz e 400 kHz
 */
 // Número de ciclos do clk_in para gerar um ciclo SCL

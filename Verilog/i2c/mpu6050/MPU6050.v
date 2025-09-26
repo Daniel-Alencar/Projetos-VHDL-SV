@@ -100,24 +100,38 @@ localparam TIMER_PARAM = 96*10**6; // 1 segundo
 localparam TOTAL_BYTES = 6;        // X, Y, Z (2 bytes cada)
 
 // ==================== REGISTRADORES INTERNOS ====================
+
+// estado atual e o proximo estado
 reg [4:0] state, next_state;
+// contador de clock
 reg [26:0] clk_cnt, next_clk;
+// endereço do registrador que vai ser lido ou escrito
 reg [6:0] i2c_address_reg, next_i2c_address;
+// dados a serem escritos no i2c
 reg [7:0] i2c_wr_data_reg, next_i2c_wr_data;
+// número de bytes a transferir
 reg [5:0] i2c_data_bytes_reg, next_i2c_data_bytes;
+// define operação de leitura (1) ou escrita (0)
 reg i2c_rd_wr_reg, next_i2c_rd_wr;
+// ativa leitura contínua de vários bytes
 reg i2c_continuous_reg, next_i2c_continuous;
+// habilita transação no barramento I2C
 reg i2c_en_reg, next_i2c_en;
+// Memória para armazenar os dados lidos do MPU6050
 reg [7:0] data_buffer [0:TOTAL_BYTES-1];
+// contador de bytes lidos/armazenados
 reg [2:0] byte_cnt, next_byte_cnt;
+// habilita envio de byte pela UART
 reg uart_tx_en_reg, next_uart_tx_en;
+// byte atual a ser enviado pela UART
 reg [7:0] uart_tx_data_reg, next_uart_tx_data;
+// flag indicando que estamos no meio de uma operação de escrita I2C
 reg writting_reg, next_writting;
 
 // ==================== FLIP-FLOPS ====================
 always @(posedge clk_in, negedge n_rst)
 if (~n_rst) begin
-    state <= IDLE;
+    state <= UART_SEND;
     clk_cnt <= 0;
     i2c_address_reg <= 0;
     i2c_wr_data_reg <= 0;
@@ -161,6 +175,8 @@ always @(*) begin
     next_byte_cnt = byte_cnt;
 
     case (state)
+
+    // Espera o i2c_ready_in indicar que o barramento I2C está livre
     IDLE: begin
         next_uart_tx_en = 1'b0;
         if (i2c_ready_in) begin
@@ -308,7 +324,10 @@ always @(*) begin
 
     UART_SEND:
     if (uart_tx_ready_in) begin
-        next_uart_tx_data = data_buffer[byte_cnt];
+        
+        // next_uart_tx_data = data_buffer[byte_cnt];
+        next_uart_tx_data = 8'h41;
+
         next_uart_tx_en = 1'b1;
         next_writting = 1'b1;
     end
