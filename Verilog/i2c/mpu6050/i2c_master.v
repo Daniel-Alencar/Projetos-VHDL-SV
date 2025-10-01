@@ -20,7 +20,7 @@ localparam OVERSAMPLING = (CLK_IN_FREQ_MHZ*10**6 / (SCL_FREQ_KHZ*10**3));
 // Tempo mínimo de hold para SDA antes da borda de SCL (especificado no padrão I2C)
 localparam T_HD_DAT = 2 * (CLK_IN_FREQ_MHZ / 10);
 // Declaração dos estados simbólicos
-localparam reg [3:0]
+localparam [3:0]
 
 // espera por enable_in para iniciar transação
 IDLE = 4'b0000,
@@ -79,7 +79,7 @@ if (~SCL_line) begin
 end
 // Se SCL_line estiver em nível alto por meio ciclo, indica que SCL está livre
 // Dúvida: por que OVERSAMPLING-1? Não seria OVERSAMPLING/2-1?
-else if (SCL_busy_cnt == OVERSAMPLING-1) begin
+else if (SCL_busy_cnt == OVERSAMPLING/2-1) begin
     SCL_busy_cnt <= 0;
     SCL_busy_reg <= 1'b0;
 end
@@ -351,12 +351,12 @@ always @(*) begin
 
         // se operação = escrita
         if (~rd_wr_in)     
-        next_wr_data = wr_data_in;
+            next_wr_data = wr_data_in;
         next_ready = 1'b0;
     end
     else begin
         if (~SCL_busy_reg)
-        next_ready = 1'b1;
+            next_ready = 1'b1;
         next_wr_valid = 1'b0;
         next_rd_valid = 1'b0;
         next_SDA = 1'b1;

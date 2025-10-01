@@ -39,31 +39,31 @@ module MPU6050_ctrl (
 // AD0 = GND
 
 // endereço I²C do dispositivo
-localparam reg [6:0] ADDRESS_MPU6050   = 7'b1101000;
+localparam [6:0] ADDRESS_MPU6050   = 7'b1101000;
 // endereço do registrador para acordar o chip
-localparam reg [7:0] PWR_MGMT_1        = 8'h6B;
+localparam [7:0] PWR_MGMT_1        = 8'h6B;
 // configuração de filtros e escalas
-localparam reg [7:0] SMPLRT_DIV        = 8'h19;
-localparam reg [7:0] CONFIG            = 8'h1A;
-localparam reg [7:0] GYRO_CONFIG       = 8'h1B;
-localparam reg [7:0] ACCEL_CONFIG      = 8'h1C;
+localparam [7:0] SMPLRT_DIV        = 8'h19;
+localparam [7:0] CONFIG            = 8'h1A;
+localparam [7:0] GYRO_CONFIG       = 8'h1B;
+localparam [7:0] ACCEL_CONFIG      = 8'h1C;
 // primeiro byte dos dados de aceleração
-localparam reg [7:0] ACCEL_XOUT_H      = 8'h3B;
+localparam [7:0] ACCEL_XOUT_H      = 8'h3B;
 
 // ==================== VALORES DE CONFIGURAÇÃO =====================
 // desativa o sleep mode
-localparam reg [7:0] PWR_MGMT_1_DATA   = 8'h00;
+localparam [7:0] PWR_MGMT_1_DATA   = 8'h00;
 // taxa de amostragem: 1kHz / (1 + 7) = 125Hz
-localparam reg [7:0] SMPLRT_DIV_DATA   = 8'h07;
+localparam [7:0] SMPLRT_DIV_DATA   = 8'h07;
 // filtro passa-baixa digital em 44Hz
-localparam reg [7:0] CONFIG_DATA       = 8'h03;
+localparam [7:0] CONFIG_DATA       = 8'h03;
 // ±250°/s
-localparam reg [7:0] GYRO_CONFIG_DATA  = 8'h00;
+localparam [7:0] GYRO_CONFIG_DATA  = 8'h00;
 // ±2g
-localparam reg [7:0] ACCEL_CONFIG_DATA = 8'h00;
+localparam [7:0] ACCEL_CONFIG_DATA = 8'h00;
 
 // ==================== DEFINIÇÃO DE ESTADOS ========================
-localparam reg [4:0]
+localparam [4:0]
 // estado inicial, espera início da configuração
 IDLE             = 5'd0,
 // escreve no PWR_MGMT_1 para tirar o chip do modo sleep
@@ -91,6 +91,17 @@ STORE_BYTE       = 5'd13,
 UART_SEND        = 5'd14,
 // espera um tempo antes de próxima leitura
 TIMER            = 5'd15;
+
+
+// Estados temporários para debug via UART
+localparam [4:0]
+UART_TX_DATA_0   = 5'd16,
+UART_TX_DATA_1   = 5'd17,
+UART_TX_DATA_2   = 5'd18,
+UART_TX_DATA_3   = 5'd19,
+UART_TX_DATA_4   = 5'd20,
+UART_TX_DATA_5   = 5'd21,
+UART_TX_DATA_6   = 5'd22;
 
 // ==================== PARÂMETROS ====================
 // contador para gerar um atraso de 1s entre leituras
@@ -131,7 +142,7 @@ reg writting_reg, next_writting;
 // ==================== FLIP-FLOPS ====================
 always @(posedge clk_in, negedge n_rst)
 if (~n_rst) begin
-    state <= UART_SEND;
+    state <= UART_TX_DATA_0;
     clk_cnt <= 0;
     i2c_address_reg <= 0;
     i2c_wr_data_reg <= 0;
@@ -176,13 +187,37 @@ always @(*) begin
 
     case (state)
 
+    UART_TX_DATA_0:
+    if (uart_tx_ready_in) begin
+        next_uart_tx_data = 8'h40;
+        next_uart_tx_en = 1'b1;
+        next_writting = 1'b1;
+    end
+    else if (writting_reg && ~uart_tx_ready_in) begin
+        next_uart_tx_en = 1'b0;
+        next_writting = 1'b0;
+        next_state = IDLE;
+    end
+
     // Espera o i2c_ready_in indicar que o barramento I2C está livre
     IDLE: begin
         next_uart_tx_en = 1'b0;
         if (i2c_ready_in) begin
             next_i2c_address = ADDRESS_MPU6050;
-            next_state = WAKEUP;
+            next_state = UART_TX_DATA_1;
         end
+    end
+
+    UART_TX_DATA_1:
+    if (uart_tx_ready_in) begin
+        next_uart_tx_data = 8'h41;
+        next_uart_tx_en = 1'b1;
+        next_writting = 1'b1;
+    end
+    else if (writting_reg && ~uart_tx_ready_in) begin
+        next_uart_tx_en = 1'b0;
+        next_writting = 1'b0;
+        next_state = WAKEUP;
     end
 
     // ======= WAKEUP =======
@@ -203,6 +238,18 @@ always @(*) begin
     WAKEUP_PARAM:
     if (i2c_wr_valid_in) begin
         next_i2c_wr_data = PWR_MGMT_1_DATA;
+        next_state = UART_TX_DATA_2;
+    end
+
+    UART_TX_DATA_2:
+    if (uart_tx_ready_in) begin
+        next_uart_tx_data = 8'h42;
+        next_uart_tx_en = 1'b1;
+        next_writting = 1'b1;
+    end
+    else if (writting_reg && ~uart_tx_ready_in) begin
+        next_uart_tx_en = 1'b0;
+        next_writting = 1'b0;
         next_state = CONF_SMPLRT;
     end
 
@@ -223,6 +270,18 @@ always @(*) begin
     CONF_SMPLRT_PARAM:
     if (i2c_wr_valid_in) begin
         next_i2c_wr_data = SMPLRT_DIV_DATA;
+        next_state = UART_TX_DATA_3;
+    end
+
+    UART_TX_DATA_3:
+    if (uart_tx_ready_in) begin
+        next_uart_tx_data = 8'h43;
+        next_uart_tx_en = 1'b1;
+        next_writting = 1'b1;
+    end
+    else if (writting_reg && ~uart_tx_ready_in) begin
+        next_uart_tx_en = 1'b0;
+        next_writting = 1'b0;
         next_state = CONF_CONFIG;
     end
 
@@ -242,6 +301,18 @@ always @(*) begin
     CONF_CONFIG_PARAM:
     if (i2c_wr_valid_in) begin
         next_i2c_wr_data = CONFIG_DATA;
+        next_state = UART_TX_DATA_4;
+    end
+
+    UART_TX_DATA_4:
+    if (uart_tx_ready_in) begin
+        next_uart_tx_data = 8'h44;
+        next_uart_tx_en = 1'b1;
+        next_writting = 1'b1;
+    end
+    else if (writting_reg && ~uart_tx_ready_in) begin
+        next_uart_tx_en = 1'b0;
+        next_writting = 1'b0;
         next_state = CONF_GYRO;
     end
 
@@ -261,6 +332,18 @@ always @(*) begin
     CONF_GYRO_PARAM:
     if (i2c_wr_valid_in) begin
         next_i2c_wr_data = GYRO_CONFIG_DATA;
+        next_state = UART_TX_DATA_5;
+    end
+
+    UART_TX_DATA_5:
+    if (uart_tx_ready_in) begin
+        next_uart_tx_data = 8'h45;
+        next_uart_tx_en = 1'b1;
+        next_writting = 1'b1;
+    end
+    else if (writting_reg && ~uart_tx_ready_in) begin
+        next_uart_tx_en = 1'b0;
+        next_writting = 1'b0;
         next_state = CONF_ACCEL;
     end
 
@@ -280,6 +363,18 @@ always @(*) begin
     CONF_ACCEL_PARAM:
     if (i2c_wr_valid_in) begin
         next_i2c_wr_data = ACCEL_CONFIG_DATA;
+        next_state = UART_TX_DATA_6;
+    end
+
+    UART_TX_DATA_6:
+    if (uart_tx_ready_in) begin
+        next_uart_tx_data = 8'h46;
+        next_uart_tx_en = 1'b1;
+        next_writting = 1'b1;
+    end
+    else if (writting_reg && ~uart_tx_ready_in) begin
+        next_uart_tx_en = 1'b0;
+        next_writting = 1'b0;
         next_state = READ_ADDR;
     end
 
@@ -325,8 +420,8 @@ always @(*) begin
     UART_SEND:
     if (uart_tx_ready_in) begin
         
-        // next_uart_tx_data = data_buffer[byte_cnt];
-        next_uart_tx_data = 8'h41;
+        next_uart_tx_data = data_buffer[byte_cnt];
+        // next_uart_tx_data = 8'h41;
 
         next_uart_tx_en = 1'b1;
         next_writting = 1'b1;

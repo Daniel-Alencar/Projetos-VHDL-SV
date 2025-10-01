@@ -4,7 +4,7 @@ module uart_rx #(parameter DATA_BITS=8, STOP_BITS=1, OVERSAMPLING=16)(
     output [DATA_BITS-1:0] data_out
 );
 // Declaração dos estados simbólicos
-localparam reg [1:0]
+localparam [1:0]
 idle = 2'b00,
 start = 2'b01,
 data = 2'b10,
