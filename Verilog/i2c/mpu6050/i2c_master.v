@@ -7,6 +7,7 @@ module i2c_master #(parameter CLK_IN_FREQ_MHZ=10, SCL_FREQ_KHZ=100, RETRY_NUM=3)
     input [7:0] wr_data_in,
     output ready_out, wr_valid_out, rd_valid_out,
     output [7:0] rd_data_out,
+    output [3:0] value_state,
     inout SCL, SDA
 );
 /*
@@ -20,7 +21,7 @@ localparam OVERSAMPLING = (CLK_IN_FREQ_MHZ*10**6 / (SCL_FREQ_KHZ*10**3));
 // Tempo mínimo de hold para SDA antes da borda de SCL (especificado no padrão I2C)
 localparam T_HD_DAT = 2 * (CLK_IN_FREQ_MHZ / 10);
 // Declaração dos estados simbólicos
-localparam [3:0]
+localparam reg [3:0]
 
 // espera por enable_in para iniciar transação
 IDLE = 4'b0000,
@@ -351,12 +352,12 @@ always @(*) begin
 
         // se operação = escrita
         if (~rd_wr_in)     
-            next_wr_data = wr_data_in;
+        next_wr_data = wr_data_in;
         next_ready = 1'b0;
     end
     else begin
         if (~SCL_busy_reg)
-            next_ready = 1'b1;
+        next_ready = 1'b1;
         next_wr_valid = 1'b0;
         next_rd_valid = 1'b0;
         next_SDA = 1'b1;
@@ -456,4 +457,5 @@ assign SCL_line = SCL;
 assign SDA = SDA_reg ? 1'bZ : 1'b0;
 assign SDA_line = SDA;
 assign rd_data_out = rd_data_reg;
+assign value_state = state;
 endmodule
