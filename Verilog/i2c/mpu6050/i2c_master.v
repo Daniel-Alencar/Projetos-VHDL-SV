@@ -71,12 +71,12 @@ para "bus free condition": ~1/2 ciclo de SCL em nível alto
 */
 // Verifica se SCL está livre (em HIGH por meio ciclo)
 reg [$clog2(OVERSAMPLING)-1:0] SCL_busy_cnt = 0;
-reg SCL_busy_reg = 1'b1;
+reg SCL_busy_reg = 1'b0;
 always @(posedge clk_in)
 // Se SCL_line estiver em nível baixo, zera o contador e indica que SCL está ocupado
 if (~SCL_line) begin
     SCL_busy_cnt <= 0;
-    SCL_busy_reg <= 1'b1;
+    SCL_busy_reg <= 1'b0;
 end
 // Se SCL_line estiver em nível alto por meio ciclo, indica que SCL está livre
 // Dúvida: por que OVERSAMPLING-1? Não seria OVERSAMPLING/2-1?
