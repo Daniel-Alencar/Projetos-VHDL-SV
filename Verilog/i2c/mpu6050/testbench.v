@@ -1,90 +1,86 @@
-`timescale 1ns / 1ps
+`timescale 1ns/1ps
 
-module tb_design_1_wrapper;
+module tb_design_1;
 
-  // sinais do DUT
-  reg dev_clk;
-  reg rx;
-  wire tx;
-  wire SCL;
-  wire SDA;
+    reg dev_clk = 0;
+    reg rx = 1; // UART idle
 
-  // ===============================
-  // Instancia do DUT
-  // ===============================
-  design_1_wrapper uut (
-    .SCL(SCL),
-    .SDA(SDA),
-    .dev_clk(dev_clk),
-    .rx(rx),
-    .tx(tx)
-  );
+    // I2C lines
+    wire SCL;
+    wire SDA;
 
-  // ===============================
-  // Clock 25 MHz
-  // ===============================
-  initial begin
-    dev_clk = 0;
-    // 25 MHz -> período 40 ns
-    forever #20 dev_clk = ~dev_clk; 
-  end
+    // UART TX
+    wire tx;
 
-  // ===============================
-  // UART RX simulado
-  // ===============================
-  initial begin
-    rx = 1'b1; // idle
-    #1000;
-    // Exemplo: enviar um byte 'A' (0x41) no UART 115200 bps
-    // Cada bit dura ~8680 ns (1/115200 s)
-    uart_send_byte(8'h41);
-  end
+    // Instancia o DUT
+    design_1_wrapper dut (
+        .SCL(SCL),
+        .SDA(SDA),
+        .dev_clk(dev_clk),
+        .rx(rx),
+        .tx(tx)
+    );
 
-  // ===============================
-  // Tarefa para enviar byte via UART
-  // ===============================
-  task uart_send_byte(input [7:0] data);
-    integer i;
-    begin
-      // start bit
-      rx = 1'b0;
-      #(8680);
-      // 8 bits de dados, LSB primeiro
-      for (i = 0; i < 8; i = i + 1) begin
-        rx = data[i];
-        #(8680);
-      end
-      // stop bit
-      rx = 1'b1;
-      #(8680);
+    // Clock de 25 MHz
+    always #20 dev_clk = ~dev_clk;
+
+    // --- Escravo I2C simulado ---
+    reg SDA_slave = 1; // inicializa em alta
+    assign SDA = SDA_slave ? 1'bz : 1'b0;
+
+    localparam [6:0] SLAVE_ADDR = 7'h68;
+
+    reg [7:0] tx_data [0:3]; // bytes que o escravo vai enviar
+    integer i, bit_cnt;
+
+    initial begin
+        tx_data[0] = 8'h75;
+        tx_data[1] = 8'h00;
+        tx_data[2] = 8'h01;
+        tx_data[3] = 8'h02;
+        SDA_slave = 1; 
+        #1000; // espera 1 us
+
+        forever begin
+            @(negedge SCL); // escravo só reage no flanco de descida de SCL
+
+            // START condition detection
+            if (SDA === 0 && SCL === 1) begin
+                // Espera endereço + R/W
+                bit_cnt = 0;
+                while(bit_cnt < 8) begin
+                    @(negedge SCL);
+                    bit_cnt = bit_cnt + 1;
+                end
+
+                // Envia ACK
+                @(negedge SCL);
+                SDA_slave = 0;
+                @(posedge SCL);
+                SDA_slave = 1;
+
+                // Envia bytes se master pediu leitura
+                for (i = 0; i < 4; i = i+1) begin
+                    for (bit_cnt = 7; bit_cnt >= 0; bit_cnt = bit_cnt - 1) begin
+                        @(negedge SCL);
+                        SDA_slave = tx_data[i][bit_cnt];
+                    end
+                    // Libera SDA para o master enviar ACK/NACK
+                    @(negedge SCL);
+                    SDA_slave = 1'bz;
+                    @(posedge SCL);
+                end
+            end
+        end
     end
-  endtask
 
-  // ===============================
-  // Modelo simplificado de I2C MPU6050 (open-drain)
-  // ===============================
-  reg sda_out;
-  // open-drain
-  assign SDA = sda_out ? 1'bz : 1'b0;
-  initial begin
-    // libera SDA
-    sda_out = 1'b1; 
-  end
-
-  // ===============================
-  // Dump para simulação
-  // ===============================
-  initial begin
-    $dumpfile("tb_design_1_wrapper.vcd");
-    $dumpvars(0, tb_design_1_wrapper);
-  end
-
-  // ===============================
-  // Tempo de simulação
-  // ===============================
-  initial begin
-    #500000000000;
-    $finish;
-  end
+    // --- Simulação e dump de waveform ---
+    initial begin
+        $dumpfile("tb_design_1.vcd");
+        $dumpvars(0, tb_design_1);
+        #500_000; // simula 500 us
+        $display("Simulação finalizada");
+        $finish;
+    end
 
 endmodule

@@ -187,8 +187,7 @@ always @(*) begin
 
     case (state)
 
-    UART_TX_DATA_0:
-    if (uart_tx_ready_in) begin
+    UARuart_tx_ready_in) begin
         next_uart_tx_data = 8'h40;
         next_uart_tx_en = 1'b1;
         next_writting = 1'b1;
@@ -196,7 +195,8 @@ always @(*) begin
     else if (writting_reg && ~uart_tx_ready_in) begin
         next_uart_tx_en = 1'b0;
         next_writting = 1'b0;
-        next_state = IDLE;
+        next_state = IDLE;T_TX_DATA_0:
+    if (
     end
 
     // Espera o i2c_ready_in indicar que o barramento I2C está livre

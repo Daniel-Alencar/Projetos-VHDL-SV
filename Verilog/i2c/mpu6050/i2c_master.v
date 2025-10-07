@@ -79,7 +79,7 @@ if (~SCL_line) begin
 end
 // Se SCL_line estiver em nível alto por meio ciclo, indica que SCL está livre
 // Dúvida: por que OVERSAMPLING-1? Não seria OVERSAMPLING/2-1?
-else if (SCL_busy_cnt == OVERSAMPLING/2-1) begin
+else if (SCL_busy_cnt == OVERSAMPLING-1) begin
     SCL_busy_cnt <= 0;
     SCL_busy_reg <= 1'b0;
 end
