@@ -6,3 +6,5 @@ set_property -dict {PACKAGE_PIN A18 IOSTANDARD LVCMOS33} [get_ports led_D2]; # I
 ## UART
 set_property -dict {PACKAGE_PIN M3 IOSTANDARD LVCMOS33} [get_ports rx]; # IO_L16P_T2_35 - P5_15
 set_property -dict {PACKAGE_PIN R3 IOSTANDARD LVCMOS33} [get_ports tx]; # IO_L3P_T0_DQS_34 - P5_16
+## Header P2
+set_property -dict {PACKAGE_PIN T3 IOSTANDARD LVCMOS33} [get_ports n_rst]; #IO_0_34 - P2_3
