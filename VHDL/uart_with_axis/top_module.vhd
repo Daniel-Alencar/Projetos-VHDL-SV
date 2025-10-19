@@ -57,7 +57,8 @@ begin
   uart_rx_inst : entity work.uart_rx
     generic map (
       DATA_BITS => 8,   -- 8 bits de dados
-      STOP_BITS => 1    -- 1 bit de parada
+      STOP_BITS => 1,   -- 1 bit de parada
+      PARITY => "EVEN"  -- Sem paridade
     )
     port map (
       clk         => clk,
