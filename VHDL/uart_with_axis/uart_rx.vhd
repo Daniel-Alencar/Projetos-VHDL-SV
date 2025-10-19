@@ -3,17 +3,16 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
 -- ==========================================================================
--- uart_rx.vhd
--- Receptor UART simples baseado em um pulso de "baud_tick".
--- - Gera data_ready (1 ciclo) quando um byte válido é recebido.
--- - Sinaliza frame_error se o stop bit for inválido.
--- - Usa sincronização de 2 flip-flops para o sinal 'rx'.
--- - Não implementa paridade nem oversampling (versão simplificada).
+-- uart_rx.vhd (corrigido)
+-- - Detecta start imediatamente (IDLE reage em 1 ciclo de clock).
+-- - START/DATA/STOP avançam somente em pulsos `baud_tick`.
+-- - Usa dupla sincronização do sinal RX (evita metastabilidade).
+-- - Não implementa oversampling nem paridade (simplicidade).
 -- ==========================================================================
 entity uart_rx is
   generic (
-    DATA_BITS : integer := 8;  -- número de bits de dados a receber (ex.: 8)
-    STOP_BITS : integer := 1   -- não utilizado internamente na versão atual
+    DATA_BITS : integer := 8;  -- número de bits de dados
+    STOP_BITS : integer := 1   -- não usado para múltiplos stop bits aqui
   );
   port (
     clk         : in  std_logic;                                   -- clock da FPGA
@@ -51,8 +50,7 @@ architecture rtl of uart_rx is
 begin
 
   ----------------------------------------------------------------------------
-  -- Sincronizador do sinal RX
-  -- Observação: escrever apenas rx_sync(1) em todo o código para usar versão segura.
+  -- Sincronizador do sinal RX (dupla-flop). Executa todo ciclo de clock.
   ----------------------------------------------------------------------------
   process(clk)
   begin
@@ -62,20 +60,15 @@ begin
     end if;
   end process;
 
-
   ----------------------------------------------------------------------------
-  -- Máquina de estados principal do receptor UART
-  --
-  -- Observação sobre amostragem:
-  -- - Este código assume que 'baud_tick' já está alinhado de forma que cada
-  --   pulso corresponde ao momento em que desejamos amostrar o próximo bit.
-  -- - Para maior robustez use oversampling (ex.: 16x) para detectar bordas de
-  --   start e amostrar no centro do bit. Aqui usamos confirmação simples do
-  --   start (estado START) para reduzir falsos disparos por ruído.
+  -- Máquina de estados principal do receptor UART (com correção)
+  -- - O IDLE verifica rx_sync(1) em todo ciclo de clock e sai imediatamente
+  --   para START assim que detecta a linha em '0'.
+  -- - START / DATA / STOP avançam apenas no pulso baud_tick = '1'.
   ----------------------------------------------------------------------------
   process(clk, reset_n)
   begin
-    -- Reset assíncrono síncrono (ativa em nível baixo)
+    -- Reset ativo em nível baixo
     if reset_n = '0' then
       state        <= IDLE;
       bit_counter  <= 0;
@@ -85,83 +78,73 @@ begin
       busy_i       <= '0';
     elsif rising_edge(clk) then
 
-      -- Garantimos que data_ready é apenas um pulso: limpamos a cada ciclo
+      -- Garante que data_ready é apenas um pulso (limpa sempre por padrão)
       data_ready_i <= '0';
 
-      -- Só reagimos quando houver um pulso de baud (amostragem por bit)
-      if baud_tick = '1' then
-        case state is
+      -- -------------- DETECÇÃO IMEDIATA DO START (fora do baud_tick) --------------
+      if state = IDLE then
+        busy_i <= '0';
+        frame_err_i <= '0';
+        -- Se a linha caiu para '0', é um start bit — reagimos imediatamente
+        if rx_sync(1) = '0' then
+          state <= START;
+          busy_i <= '1';
+        end if;
 
-          -- =================================================================
-          when IDLE =>
-            -- Receptor está inativo. Aguarda borda de start (linha RX caiu para '0').
-            busy_i <= '0';            -- não ocupado
-            frame_err_i <= '0';       -- limpa erro anterior
-            if rx_sync(1) = '0' then  -- possível start bit detectado
+      -- -------------- PARA OS DEMAIS ESTADOS, AVANÇAMOS SÓ EM baud_tick --------------
+      else
+        if baud_tick = '1' then
+          case state is
 
-              -- Passa para estado de confirmação do start
-              state <= START;
-              busy_i <= '1';  -- marca ocupado imediatamente
-            end if;
+            when START =>
+              -- Confirmação do start: se ainda é '0' seguimos, caso contrário
+              -- trata-se de ruído e voltamos para IDLE.
+              if rx_sync(1) = '0' then
+                bit_counter <= 0;
+                state <= DATA;
+              else
+                state <= IDLE;
+                busy_i <= '0';
+              end if;
 
-          -- =================================================================
-          when START =>
-            -- Confirmação simples do start: verifica se o bit ainda é '0'.
-            -- Se confirmado, inicia leitura dos bits de dados.
-            -- Caso contrário, era ruído; volta ao IDLE.
-            if rx_sync(1) = '0' then
-              bit_counter <= 0;   -- prepara contador para o primeiro data bit
-              state <= DATA;
-            else
-              -- falso alarme, retorna a IDLE
+            when DATA =>
+              -- Amostra um bit de dados por vez (LSB first)
+              shift_reg(bit_counter) <= rx_sync(1);
+
+              if bit_counter = DATA_BITS - 1 then
+                state <= STOP;
+              else
+                bit_counter <= bit_counter + 1;
+              end if;
+
+            when STOP =>
+              -- Verifica o bit de parada (deve ser '1')
+              if rx_sync(1) = '1' then
+                data_ready_i <= '1';  -- byte válido pronto (pulso)
+                frame_err_i <= '0';
+              else
+                frame_err_i <= '1';
+              end if;
               state <= IDLE;
-            end if;
+              busy_i <= '0';
 
-          -- =================================================================
-          when DATA =>
-            -- Aqui lemos um bit de dados por vez (LSB primeiro).
-            -- Armazenamos na posição bit_counter do shift_reg.
-            shift_reg(bit_counter) <= rx_sync(1);
+            when others =>
+              state <= IDLE;
+              busy_i <= '0';
 
-            -- Se já lemos o último bit, passamos para STOP na próxima amostragem
-            if bit_counter = DATA_BITS - 1 then
-              state <= STOP;
-            else
-              -- caso contrário incrementa contador para o próximo bit
-              bit_counter <= bit_counter + 1;
-            end if;
+          end case;
+        end if; -- fim if baud_tick
+      end if; -- fim if state = IDLE
 
-          -- =================================================================
-          when STOP =>
-            -- Verifica o bit de parada (deve ser '1' em UART padrão).
-            if rx_sync(1) = '1' then
-              -- Frame válido: emite pulso data_ready por 1 ciclo
-              data_ready_i <= '1';
-              frame_err_i <= '0';
-            else
-              -- Stop inválido -> frame error
-              frame_err_i <= '1';
-            end if;
-            -- Em qualquer caso voltamos para IDLE para aguardar novo frame
-            state <= IDLE;
-
-          -- =================================================================
-          when others =>
-            -- segurança contra estados inválidos
-            state <= IDLE;
-
-        end case;
-      end if; -- fim if baud_tick
     end if; -- fim rising_edge
   end process;
 
-
   ----------------------------------------------------------------------------
-  -- Ligação das saídas (sinais internos -> portas)
+  -- Saídas
   ----------------------------------------------------------------------------
-  data_out    <= shift_reg;     -- dado paralelo recebido
-  data_ready  <= data_ready_i;  -- pulso 1 ciclo quando byte pronto
-  frame_error <= frame_err_i;   -- erro de frame (stop inválido)
-  busy        <= busy_i;        -- receptor ocupado
+  data_out    <= shift_reg;
+  data_ready  <= data_ready_i;
+  frame_error <= frame_err_i;
+  busy        <= busy_i;
 
 end rtl;

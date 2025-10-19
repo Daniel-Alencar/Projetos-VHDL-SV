@@ -77,30 +77,31 @@ begin
       rx_line <= '1';
       wait for BIT_PERIOD;
     end procedure;
-  begin
 
-    -- Reset inicial
-    reset_n <= '0';
-    wait for 100 ns;
-    reset_n <= '1';
-    wait for 100 us;
+    begin
 
-    report "=== Iniciando transmissão UART de teste ===";
+      -- Reset inicial
+      reset_n <= '0';
+      wait for 100 ns;
+      reset_n <= '1';
+      wait for 100 us;
 
-    -- Envia o byte 0x55 = "01010101"
-    send_byte(rx, "01010101");
+      report "=== Iniciando transmissão UART de teste ===";
 
-    -- Espera tempo suficiente para recepção
-    wait for 20 * BIT_PERIOD;
+      -- Envia o byte 0x55 = "01010101"
+      send_byte(rx, "10101010");
 
-    if data_ready = '1' then
-      report "Byte recebido: " & integer'image(to_integer(unsigned(data_out)));
-    else
-      report "Nenhum byte recebido (erro de sincronismo?)" severity warning;
-    end if;
+      -- Espera tempo suficiente para recepção
+      wait for 20 * BIT_PERIOD;
 
-    report "Fim da simulação.";
-    wait;
-  end process;
+      if data_ready = '1' then
+        report "Byte recebido: " & integer'image(to_integer(unsigned(data_out)));
+      else
+        report "Nenhum byte recebido (erro de sincronismo?)" severity warning;
+      end if;
+
+      report "Fim da simulação.";
+      wait;
+    end process;
 
 end tb;
