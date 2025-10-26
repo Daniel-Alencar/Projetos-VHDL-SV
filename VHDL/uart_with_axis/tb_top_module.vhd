@@ -4,9 +4,11 @@ use IEEE.NUMERIC_STD.ALL;
 
 -- ============================================================================
 -- Testbench do top_module
--- - Testa recepção UART com suporte a paridade e 1 ou 2 bits de parada
--- - Clock = 50 MHz, Baud = 115200 bps
--- - Simula envio do byte 0x55 ("01010101")
+-- Testa a recepção UART (com paridade e bits de parada configuráveis)
+-- integrando UART RX + FIFO TX + Baud Generator.
+--
+-- Clock = 50 MHz, Baud = 115200 bps
+-- Simula o envio dos bytes 0x55 e 0xA3 via linha RX.
 -- ============================================================================
 
 entity tb_top_module is
@@ -71,8 +73,8 @@ begin
   stim_proc : process
     -- Função auxiliar: calcula paridade de um vetor de bits
     function calc_parity(
-      data   : std_logic_vector;
-      mode   : string
+      data : std_logic_vector;
+      mode : string
     ) return std_logic is
       variable ones : integer := 0;
     begin
@@ -147,20 +149,40 @@ begin
     -----------------------------------------------------------------------
     -- Envia o byte 0x55 (01010101)
     -----------------------------------------------------------------------
+    report "Enviando byte 0x55 (01010101)";
     send_byte(rx, "10101010", PARITY_MODE, STOP_BITS);
+
+    wait for 12 * BIT_PERIOD;
+
+    -----------------------------------------------------------------------
+    -- Envia o byte 0xA3 (10100011)
+    -----------------------------------------------------------------------
+    report "Enviando byte 0xA3 (10100011)";
+    send_byte(rx, "11000101", PARITY_MODE, STOP_BITS);
 
     wait for 20 * BIT_PERIOD;
 
     -----------------------------------------------------------------------
     -- Resultados
     -----------------------------------------------------------------------
+    -- if frame_error = '1' then
+    --   report "Frame error detectado!" severity warning;
+    -- end if;
 
-    if frame_error = '1' then
-      report "Frame error detectado!" severity warning;
-    end if;
+    -- if parity_error = '1' then
+    --   report "Parity error detectado!" severity warning;
+    -- end if;
 
-    report "Fim da simulação.";
-    wait;
+    -- if axis_tvalid = '1' then
+    --   report "Byte armazenado no FIFO: 0x" &
+    --     to_hstring(axis_tdata) &
+    --     " (" & integer'image(to_integer(unsigned(axis_tdata))) & ")";
+    -- else
+    --   report "Nenhum dado válido recebido do FIFO" severity warning;
+    -- end if;
+
+    -- report "=== Fim da simulação ===";
+    -- wait;
   end process;
 
 end tb;

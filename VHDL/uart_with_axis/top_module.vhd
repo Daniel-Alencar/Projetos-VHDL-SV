@@ -4,6 +4,7 @@ use IEEE.NUMERIC_STD.ALL;
 
 -- ============================================================================
 -- Top-level temporário de teste
+--
 -- Contém:
 --   - baud_gen : gera pulso "baud_tick" a partir de clk e taxa de baud
 --   - uart_rx  : receptor UART que converte o sinal serial RX em AXIS
@@ -11,6 +12,7 @@ use IEEE.NUMERIC_STD.ALL;
 --
 -- Conexões externas:
 --   clk, reset_n, rx
+--
 -- Saídas de teste:
 --   axis_tdata, axis_tvalid, frame_error, parity_error, busy
 -- ============================================================================
@@ -21,9 +23,11 @@ entity top_module is
     reset_n      : in  std_logic;                      -- Reset ativo em nível baixo
     rx           : in  std_logic;                      -- Linha serial RX (do PC / USB-UART)
 
-    -- Saídas de depuração
-    axis_tdata   : out std_logic_vector(7 downto 0);   -- Dado recebido (da saída do FIFO)
+    -- Saídas de depuração (vindas da saída do FIFO)
+    axis_tdata   : out std_logic_vector(7 downto 0);   -- Dado recebido do FIFO
     axis_tvalid  : out std_logic;                      -- Indica que há dado válido no FIFO
+
+    -- Sinais de diagnóstico do UART
     frame_error  : out std_logic;                      -- Erro de stop bit
     parity_error : out std_logic;                      -- Erro de paridade
     busy         : out std_logic                       -- UART RX ocupado
@@ -36,16 +40,20 @@ architecture rtl of top_module is
   -- Sinais internos
   ---------------------------------------------------------------------------
   signal baud_tick     : std_logic;
+
+  -- Interface AXIS entre UART RX e FIFO TX
   signal s_axis_tdata  : std_logic_vector(7 downto 0);
   signal s_axis_tvalid : std_logic;
   signal s_axis_tready : std_logic;
+
+  -- Saída do FIFO (para debug)
   signal fifo_tdata    : std_logic_vector(7 downto 0);
   signal fifo_tvalid   : std_logic;
 
 begin
 
   ---------------------------------------------------------------------------
-  -- Gerador de baud rate (baud_gen)
+  -- Gerador de Baud Rate (baud_gen)
   ---------------------------------------------------------------------------
   baud_gen_inst : entity work.baud_gen
     generic map (
@@ -74,10 +82,12 @@ begin
       rx           => rx,
       baud_tick    => baud_tick,
 
-      axis_tdata   => s_axis_tdata,   -- Dados AXIS para FIFO
-      axis_tvalid  => s_axis_tvalid,  -- Validade do dado
-      axis_tready  => s_axis_tready,  -- FIFO pronto para receber
+      -- Interface AXIS de saída (para FIFO)
+      axis_tdata   => s_axis_tdata,
+      axis_tvalid  => s_axis_tvalid,
+      axis_tready  => s_axis_tready,
 
+      -- Diagnósticos
       frame_error  => frame_error,
       parity_error => parity_error,
       busy         => busy
@@ -85,27 +95,29 @@ begin
 
   ---------------------------------------------------------------------------
   -- FIFO TX
-  -- Recebe bytes via AXI-Stream e os armazena para posterior transmissão.
+  -- Recebe bytes via AXI-Stream e armazena para posterior leitura
   ---------------------------------------------------------------------------
   fifo_tx_inst : entity work.fifo_tx
     generic map (
       DATA_WIDTH => 8,
-      DEPTH      => 16  -- Exemplo: FIFO de 16 bytes
+      DEPTH      => 16  -- FIFO de 16 bytes
     )
     port map (
       clk          => clk,
       reset_n      => reset_n,
 
-      axis_tdata   => s_axis_tdata,   -- Dado vindo do UART RX
-      axis_tvalid  => s_axis_tvalid,  -- Dado válido
-      axis_tready  => s_axis_tready,  -- FIFO pronto para receber
-      
-      fifo_tdata   => fifo_tdata,     -- Dado armazenado (saída FIFO)
-      fifo_tvalid  => fifo_tvalid     -- Dado disponível na saída FIFO
+      -- AXIS de entrada (vindo do UART RX)
+      axis_tdata   => s_axis_tdata,
+      axis_tvalid  => s_axis_tvalid,
+      axis_tready  => s_axis_tready,
+
+      -- Saída do FIFO (para debug)
+      fifo_tdata   => fifo_tdata,
+      fifo_tvalid  => fifo_tvalid
     );
 
   ---------------------------------------------------------------------------
-  -- Saídas externas (para debug)
+  -- Saídas externas (para observação e debug)
   ---------------------------------------------------------------------------
   axis_tdata  <= fifo_tdata;
   axis_tvalid <= fifo_tvalid;
