@@ -28,13 +28,14 @@ architecture tb of tb_top_module is
   ---------------------------------------------------------------------------
   -- Sinais de interconexão
   ---------------------------------------------------------------------------
-  signal clk         : std_logic := '0';
-  signal reset_n     : std_logic := '0';
-  signal rx          : std_logic := '1';  -- linha serial idle = '1'
-  signal data_out    : std_logic_vector(7 downto 0);
-  signal data_ready  : std_logic;
-  signal frame_error : std_logic;
-  signal busy        : std_logic;
+  signal clk          : std_logic := '0';
+  signal reset_n      : std_logic := '0';
+  signal rx           : std_logic := '1';  -- linha serial idle = '1'
+  signal axis_tdata   : std_logic_vector(7 downto 0);
+  signal axis_tvalid  : std_logic;
+  signal frame_error  : std_logic;
+  signal parity_error : std_logic;
+  signal busy         : std_logic;
 
 begin
 
@@ -54,13 +55,14 @@ begin
   ---------------------------------------------------------------------------
   uut : entity work.top_module
     port map (
-      clk         => clk,
-      reset_n     => reset_n,
-      rx          => rx,
-      data_out    => data_out,
-      data_ready  => data_ready,
-      frame_error => frame_error,
-      busy        => busy
+      clk          => clk,
+      reset_n      => reset_n,
+      rx           => rx,
+      axis_tdata   => axis_tdata,
+      axis_tvalid  => axis_tvalid,
+      frame_error  => frame_error,
+      parity_error => parity_error,
+      busy         => busy
     );
 
   ---------------------------------------------------------------------------
