@@ -33,7 +33,8 @@ architecture rtl of uart_rx is
 
   signal bit_index   : integer range 0 to DATA_BITS-1 := 0;
   signal rx_shift    : std_logic_vector(DATA_BITS-1 downto 0) := (others => '0');
-  signal stop_count  : integer range 0 to STOP_BITS := 0;
+  -- Aumentamos o range para evitar o erro de cálculo "out of range"
+  signal stop_count  : integer range 0 to STOP_BITS + 1 := 0;
 
   signal rx_reg, rx_sync : std_logic := '1';
   signal parity_calc     : std_logic := '0';
