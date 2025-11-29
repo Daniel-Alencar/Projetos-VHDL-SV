@@ -50,27 +50,28 @@ begin
 	TMDS_mod10 <= (TMDS_mod10==4'd9) ? 4'd0 : TMDS_mod10+4'd1;
 end
 
-// OBUFDS OBUFDS_red  (.I(TMDS_shift_red  [0]), .O(TMDSp[2]), .OB(TMDSn[2]));
-// OBUFDS OBUFDS_green(.I(TMDS_shift_green[0]), .O(TMDSp[1]), .OB(TMDSn[1]));
-// OBUFDS OBUFDS_blue (.I(TMDS_shift_blue [0]), .O(TMDSp[0]), .OB(TMDSn[0]));
-// OBUFDS OBUFDS_clock(.I(pixclk), .O(TMDSp_clock), .OB(TMDSn_clock));
+ OBUFDS OBUFDS_red  (.I(TMDS_shift_red  [0]), .O(TMDSp[2]), .OB(TMDSn[2]));
+ OBUFDS OBUFDS_green(.I(TMDS_shift_green[0]), .O(TMDSp[1]), .OB(TMDSn[1]));
+ OBUFDS OBUFDS_blue (.I(TMDS_shift_blue [0]), .O(TMDSp[0]), .OB(TMDSn[0]));
+ 
+ OBUFDS OBUFDS_clock(.I(pixclk), .O(TMDSp_clock), .OB(TMDSn_clock));
 
-// Versão Pseudo-Diferencial (Manual)
-// Buffer para RED
-OBUF OBUF_red_p   (.I(TMDS_shift_red[0]),  .O(TMDSp[2]));
-OBUF OBUF_red_n   (.I(~TMDS_shift_red[0]), .O(TMDSn[2]));
+//// Versão Pseudo-Diferencial (Manual)
+//// Buffer para RED
+//OBUF OBUF_red_p   (.I(TMDS_shift_red[0]),  .O(TMDSp[2]));
+//OBUF OBUF_red_n   (.I(~TMDS_shift_red[0]), .O(TMDSn[2]));
 
-// Buffer para GREEN
-OBUF OBUF_green_p (.I(TMDS_shift_green[0]),  .O(TMDSp[1]));
-OBUF OBUF_green_n (.I(~TMDS_shift_green[0]), .O(TMDSn[1]));
+//// Buffer para GREEN
+//OBUF OBUF_green_p (.I(TMDS_shift_green[0]),  .O(TMDSp[1]));
+//OBUF OBUF_green_n (.I(~TMDS_shift_green[0]), .O(TMDSn[1]));
 
-// Buffer para BLUE
-OBUF OBUF_blue_p  (.I(TMDS_shift_blue[0]),  .O(TMDSp[0]));
-OBUF OBUF_blue_n  (.I(~TMDS_shift_blue[0]), .O(TMDSn[0]));
+//// Buffer para BLUE
+//OBUF OBUF_blue_p  (.I(TMDS_shift_blue[0]),  .O(TMDSp[0]));
+//OBUF OBUF_blue_n  (.I(~TMDS_shift_blue[0]), .O(TMDSn[0]));
 
-// Buffer para CLOCK
-OBUF OBUF_clk_p   (.I(pixclk),  .O(TMDSp_clock));
-OBUF OBUF_clk_n   (.I(~pixclk), .O(TMDSn_clock));
+//// Buffer para CLOCK
+//OBUF OBUF_clk_p   (.I(pixclk),  .O(TMDSp_clock));
+//OBUF OBUF_clk_n   (.I(~pixclk), .O(TMDSn_clock));
 
 endmodule
 

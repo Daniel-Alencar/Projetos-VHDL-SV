@@ -26,6 +26,7 @@ entity top_module is
     -- Saídas de depuração (vindas da saída do FIFO)
     axis_tdata   : out std_logic_vector(7 downto 0);   -- Dado recebido do FIFO
     axis_tvalid  : out std_logic;                      -- Indica que há dado válido no FIFO
+    axis_tready  : out std_logic;                      -- DÚVIDA
 
     -- Sinais de diagnóstico do UART
     frame_error  : out std_logic;                      -- Erro de stop bit
@@ -49,6 +50,7 @@ architecture rtl of top_module is
   -- Saída do FIFO (para debug)
   signal fifo_tdata    : std_logic_vector(7 downto 0);
   signal fifo_tvalid   : std_logic;
+  signal fifo_tready   : std_logic;
 
 begin
 
@@ -113,7 +115,8 @@ begin
 
       -- Saída do FIFO (para debug)
       fifo_tdata   => fifo_tdata,
-      fifo_tvalid  => fifo_tvalid
+      fifo_tvalid  => fifo_tvalid,
+      fifo_tready  => fifo_tready
     );
 
   ---------------------------------------------------------------------------
@@ -121,5 +124,6 @@ begin
   ---------------------------------------------------------------------------
   axis_tdata  <= fifo_tdata;
   axis_tvalid <= fifo_tvalid;
+  axis_tready <= fifo_tready;
 
 end rtl;
