@@ -2,48 +2,34 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
--- ============================================================================
--- Testbench do top_module
--- Testa a recepção UART (com paridade e bits de parada configuráveis)
--- integrando UART RX + FIFO TX + Baud Generator.
---
--- Clock = 50 MHz, Baud = 115200 bps
--- Simula o envio dos bytes 0x55 e 0xA3 via linha RX.
--- ============================================================================
-
 entity tb_top_module is
 end tb_top_module;
 
 architecture tb of tb_top_module is
 
   ---------------------------------------------------------------------------
-  -- Constantes de simulação
+  -- CONFIGURAÇÕES (Ajuste conforme seu Top Module real)
   ---------------------------------------------------------------------------
-  constant CLK_FREQ   : integer := 50_000_000;
-  constant CLK_PERIOD : time := 20 ns;                     -- 50 MHz
+  -- IMPORTANTE: Se o top_module está configurado para 25 MHz (Colorlight),
+  -- mude aqui para 25_000_000. Se estiver usando 50 MHz, mantenha.
+  constant CLK_FREQ   : integer := 25_000_000; 
+  constant CLK_PERIOD : time := 1 sec / CLK_FREQ;
+  
   constant BAUD_RATE  : integer := 115200;
-  constant BIT_PERIOD : time := 1 sec / BAUD_RATE;         -- ≈ 8.68 µs
+  constant BIT_PERIOD : time := 1 sec / BAUD_RATE;
 
-  constant PARITY_MODE : string := "EVEN";  -- "NONE", "EVEN" ou "ODD"
-  constant STOP_BITS   : integer := 1;      -- 1 ou 2 bits de parada
+  -- Teste com "NONE" para ver funcionar, ou "EVEN" para ver falhar (se o PC estiver errado)
+  constant PARITY_MODE : string := "EVEN"; 
+  constant STOP_BITS   : integer := 1;
 
-  ---------------------------------------------------------------------------
-  -- Sinais de interconexão
-  ---------------------------------------------------------------------------
   signal clk          : std_logic := '0';
   signal reset_n      : std_logic := '0';
-  signal rx           : std_logic := '1';  -- linha serial idle = '1'
-  signal axis_tdata   : std_logic_vector(7 downto 0);
-  signal axis_tvalid  : std_logic;
-  signal frame_error  : std_logic;
-  signal parity_error : std_logic;
-  signal busy         : std_logic;
+  signal rx           : std_logic := '1';
+  signal tx           : std_logic;
 
 begin
 
-  ---------------------------------------------------------------------------
-  -- Geração do clock de 50 MHz
-  ---------------------------------------------------------------------------
+  -- Geração de Clock
   clk_process : process
   begin
     clk <= '0';
@@ -52,56 +38,34 @@ begin
     wait for CLK_PERIOD / 2;
   end process;
 
-  ---------------------------------------------------------------------------
-  -- Instancia o módulo top_module sob teste (UUT)
-  ---------------------------------------------------------------------------
+  -- DUT (Device Under Test)
   uut : entity work.top_module
     port map (
       clk          => clk,
       reset_n      => reset_n,
       rx           => rx,
-      axis_tdata   => axis_tdata,
-      axis_tvalid  => axis_tvalid,
-      frame_error  => frame_error,
-      parity_error => parity_error,
-      busy         => busy
+      tx           => tx
     );
 
-  ---------------------------------------------------------------------------
-  -- Processo de estímulo: envia bytes UART simulando a linha "rx"
-  ---------------------------------------------------------------------------
+  -- Processo de Estímulo
   stim_proc : process
-    -- Função auxiliar: calcula paridade de um vetor de bits
-    function calc_parity(
-      data : std_logic_vector;
-      mode : string
-    ) return std_logic is
+
+    -- 1. Função de cálculo de paridade (MANTIDA IGUAL)
+    function calc_parity(data : std_logic_vector; mode : string) return std_logic is
       variable ones : integer := 0;
     begin
       for i in data'range loop
-        if data(i) = '1' then
-          ones := ones + 1;
-        end if;
+        if data(i) = '1' then ones := ones + 1; end if;
       end loop;
 
       if mode = "EVEN" then
-        if (ones mod 2) = 0 then
-          return '0';  -- já par
-        else
-          return '1';
-        end if;
+        if (ones mod 2) = 0 then return '0'; else return '1'; end if;
       elsif mode = "ODD" then
-        if (ones mod 2) = 0 then
-          return '1';
-        else
-          return '0';
-        end if;
-      else
-        return '0';  -- "NONE": valor irrelevante
-      end if;
+        if (ones mod 2) = 0 then return '1'; else return '0'; end if;
+      else return '0'; end if;
     end function;
 
-    -- Procedimento que envia um byte via linha RX (formato UART)
+    -- 2. Procedure para enviar UM BYTE (MANTIDA IGUAL)
     procedure send_byte(
       signal rx_line : out std_logic;
       data           : std_logic_vector(7 downto 0);
@@ -112,77 +76,70 @@ begin
     begin
       parity_bit := calc_parity(data, parity_mode);
 
-      -- Start bit (nível baixo)
+      -- Start bit
       rx_line <= '0';
       wait for BIT_PERIOD;
 
-      -- Bits de dados (LSB primeiro)
+      -- Dados (LSB primeiro)
       for i in 0 to 7 loop
         rx_line <= data(i);
         wait for BIT_PERIOD;
       end loop;
 
-      -- Bit de paridade (se aplicável)
+      -- Paridade
       if parity_mode /= "NONE" then
         rx_line <= parity_bit;
         wait for BIT_PERIOD;
       end if;
 
-      -- Bits de parada (nível alto)
+      -- Stop bits
       rx_line <= '1';
       for i in 1 to stop_bits loop
         wait for BIT_PERIOD;
       end loop;
     end procedure;
 
+    -- 3. NOVA PROCEDURE: Enviar STRING completa
+    procedure send_string(
+      signal rx_line : out std_logic;
+      msg            : string;
+      parity_mode    : string;
+      stop_bits      : integer
+    ) is
+      variable char_byte : std_logic_vector(7 downto 0);
+    begin
+      -- Itera sobre cada caractere da string
+      for i in msg'range loop
+        -- Converte Character -> Integer -> Unsigned -> Std_Logic_Vector
+        char_byte := std_logic_vector(to_unsigned(character'pos(msg(i)), 8));
+        
+        -- Chama a função de envio de byte
+        send_byte(rx_line, char_byte, parity_mode, stop_bits);
+        
+        -- Nota: Não colocamos 'wait' aqui para simular o envio "Back-to-Back"
+        -- que é o cenário mais estressante para o UART (onde ocorrem os erros de frame).
+      end loop;
+    end procedure;
+
   begin
-    -----------------------------------------------------------------------
-    -- RESET inicial
-    -----------------------------------------------------------------------
+    -- Inicialização
     reset_n <= '0';
     wait for 100 ns;
     reset_n <= '1';
-    wait for 100 us;
+    wait for 100 us; -- Tempo para o sistema estabilizar
 
-    report "=== Iniciando transmissão UART de teste ===";
+    report "=== Teste 1: Envio de Byte isolado (Caractere 'a') ===";
+    -- 'a' em ASCII é 0x61
+    send_string(rx, "a", PARITY_MODE, STOP_BITS);
+    wait for 20 * BIT_PERIOD; -- Pausa longa
 
-    -----------------------------------------------------------------------
-    -- Envia o byte 0x55 (01010101)
-    -----------------------------------------------------------------------
-    report "Enviando byte 0x55 (01010101)";
-    send_byte(rx, "10101010", PARITY_MODE, STOP_BITS);
+    report "=== Teste 2: Envio de String Continua ('daniel') ===";
+    -- Isso vai testar o comportamento de Start bit colado no Stop bit anterior
+    send_string(rx, "daniel", PARITY_MODE, STOP_BITS);
 
-    wait for 12 * BIT_PERIOD;
-
-    -----------------------------------------------------------------------
-    -- Envia o byte 0xA3 (10100011)
-    -----------------------------------------------------------------------
-    report "Enviando byte 0xA3 (10100011)";
-    send_byte(rx, "11000101", PARITY_MODE, STOP_BITS);
-
-    wait for 20 * BIT_PERIOD;
-
-    -----------------------------------------------------------------------
-    -- Resultados
-    -----------------------------------------------------------------------
-    -- if frame_error = '1' then
-    --   report "Frame error detectado!" severity warning;
-    -- end if;
-
-    -- if parity_error = '1' then
-    --   report "Parity error detectado!" severity warning;
-    -- end if;
-
-    -- if axis_tvalid = '1' then
-    --   report "Byte armazenado no FIFO: 0x" &
-    --     to_hstring(axis_tdata) &
-    --     " (" & integer'image(to_integer(unsigned(axis_tdata))) & ")";
-    -- else
-    --   report "Nenhum dado válido recebido do FIFO" severity warning;
-    -- end if;
-
-    -- report "=== Fim da simulação ===";
-    -- wait;
+    wait for 500 us;
+    report "=== Fim da Simulação ===";
+    wait;
   end process;
 
 end tb;
