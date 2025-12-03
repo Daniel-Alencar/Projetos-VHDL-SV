@@ -57,22 +57,44 @@ begin
       baud_tick => baud_tick
     );
 
-  -- 2. Receptor UART
+  -- -- 2. Receptor UART
+  -- uart_rx_inst : entity work.uart_rx
+  --   generic map (
+  --     DATA_BITS => 8,
+  --     STOP_BITS => 1,
+  --     PARITY    => "NONE"
+  --   )
+  --   port map (
+  --     clk          => clk,
+  --     reset_n      => reset_n,
+  --     rx           => rx,
+  --     baud_tick    => baud_tick,
+  --     axis_tdata   => s_axis_tdata,
+  --     axis_tvalid  => s_axis_tvalid,
+  --     axis_tready  => s_axis_tready,
+  --     -- Conectamos em sinais internos que não vão a lugar nenhum
+  --     frame_error  => ignore_error1,
+  --     parity_error => ignore_error2,
+  --     busy         => ignore_busy
+  --   );
+
+  -- 2. Receptor UART (Atualizado com timer interno)
   uart_rx_inst : entity work.uart_rx
     generic map (
       DATA_BITS => 8,
       STOP_BITS => 1,
-      PARITY    => "NONE"
+      PARITY    => "NONE",
+      CLK_FREQ  => 25_000_000, -- Configure para o clock da Colorlight i9+
+      BAUD_RATE => 115_200
     )
     port map (
       clk          => clk,
       reset_n      => reset_n,
       rx           => rx,
-      baud_tick    => baud_tick,
+      -- baud_tick => baud_tick, -- REMOVIDO: RX gera seu proprio timing
       axis_tdata   => s_axis_tdata,
       axis_tvalid  => s_axis_tvalid,
       axis_tready  => s_axis_tready,
-      -- Conectamos em sinais internos que não vão a lugar nenhum
       frame_error  => ignore_error1,
       parity_error => ignore_error2,
       busy         => ignore_busy
@@ -80,7 +102,7 @@ begin
 
   -- 3. FIFO Intermediária 1 (TX)
   fifo_rx_inst : entity work.fifo_UART
-    generic map ( DATA_WIDTH => 8, DEPTH => 16 )
+    generic map ( DATA_WIDTH => 8, DEPTH => 4096 )
     port map (
       clk          => clk,
       reset_n      => reset_n,
@@ -94,7 +116,7 @@ begin
 
   -- 4. FIFO Intermediária 2 (RX)
   fifo_tx_inst : entity work.fifo_UART
-    generic map ( DATA_WIDTH => 8, DEPTH => 16 )
+    generic map ( DATA_WIDTH => 8, DEPTH => 4096 )
     port map (
       clk          => clk,
       reset_n      => reset_n,
