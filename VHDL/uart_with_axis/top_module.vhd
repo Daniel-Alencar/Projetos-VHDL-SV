@@ -8,8 +8,6 @@ entity top_module is
     reset_n      : in  std_logic;
     rx           : in  std_logic;
     tx           : out std_logic
-    -- REMOVIDAS todas as portas de debug (axis_*, erros, busy)
-    -- pois elas não têm pinos na placa.
   );
 end top_module;
 
@@ -37,7 +35,7 @@ architecture rtl of top_module is
   signal tx_busy        : std_logic;
   signal tx_start       : std_logic;
 
-  -- Sinais "Dummy" (para conectar as saídas de debug que não usaremos externamente)
+  -- Sinais "Dummy" (para conectar as saídas de debug)
   signal ignore_data    : std_logic_vector(7 downto 0);
   signal ignore_valid   : std_logic;
   signal ignore_ready   : std_logic;
@@ -64,7 +62,7 @@ begin
     generic map (
       DATA_BITS => 8,
       STOP_BITS => 1,
-      PARITY    => "EVEN"
+      PARITY    => "NONE"
     )
     port map (
       clk          => clk,
@@ -81,7 +79,7 @@ begin
     );
 
   -- 3. FIFO Intermediária 1 (TX)
-  fifo_tx_inst : entity work.fifo_tx
+  fifo_rx_inst : entity work.fifo_UART
     generic map ( DATA_WIDTH => 8, DEPTH => 16 )
     port map (
       clk          => clk,
@@ -95,7 +93,7 @@ begin
     );
 
   -- 4. FIFO Intermediária 2 (RX)
-  fifo_rx_inst : entity work.fifo_tx
+  fifo_tx_inst : entity work.fifo_UART
     generic map ( DATA_WIDTH => 8, DEPTH => 16 )
     port map (
       clk          => clk,
@@ -125,7 +123,7 @@ begin
     generic map (
       DATA_BITS => 8,
       STOP_BITS => 1,
-      PARITY    => "EVEN"
+      PARITY    => "NONE"
     )
     port map (
       clk       => clk,

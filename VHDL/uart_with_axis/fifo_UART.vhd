@@ -2,7 +2,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
-entity fifo_tx is
+entity fifo_UART is
   generic (
     DATA_WIDTH : integer := 8;
     DEPTH      : integer := 16
@@ -21,9 +21,9 @@ entity fifo_tx is
     fifo_tvalid  : out std_logic;
     fifo_tready  : in  std_logic
   );
-end fifo_tx;
+end fifo_UART;
 
-architecture rtl of fifo_tx is
+architecture rtl of fifo_UART is
 
   ---------------------------------------------------------------------------
   -- Função auxiliar

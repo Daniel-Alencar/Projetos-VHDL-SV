@@ -18,8 +18,7 @@ architecture tb of tb_top_module is
   constant BAUD_RATE  : integer := 115200;
   constant BIT_PERIOD : time := 1 sec / BAUD_RATE;
 
-  -- Teste com "NONE" para ver funcionar, ou "EVEN" para ver falhar (se o PC estiver errado)
-  constant PARITY_MODE : string := "EVEN"; 
+  constant PARITY_MODE : string := "NONE"; 
   constant STOP_BITS   : integer := 1;
 
   signal clk          : std_logic := '0';
@@ -136,6 +135,27 @@ begin
     report "=== Teste 2: Envio de String Continua ('daniel') ===";
     -- Isso vai testar o comportamento de Start bit colado no Stop bit anterior
     send_string(rx, "daniel", PARITY_MODE, STOP_BITS);
+    wait for 20 * BIT_PERIOD; -- Pausa longa
+
+    report "=== Teste 3: Envio de String Continua ('danielalencarpenhacarvalho') ===";
+    -- Isso vai testar o comportamento de Start bit colado no Stop bit anterior
+    send_string(rx, "danielalencarpenhacarvalho", PARITY_MODE, STOP_BITS);
+    wait for 20 * BIT_PERIOD; -- Pausa longa
+
+    report "=== Teste 4: Envio de String Continua ('danielalencarpenhacarvalho') ===";
+    -- Isso vai testar o comportamento de Start bit colado no Stop bit anterior
+    send_string(rx, "danielalencarpenhacarvalho", PARITY_MODE, STOP_BITS);
+    wait for 20 * BIT_PERIOD; -- Pausa longa
+
+    report "=== Teste 5: Envio de String Continua ('danielalencarpenhacarvalho') ===";
+    -- Isso vai testar o comportamento de Start bit colado no Stop bit anterior
+    send_string(rx, "danielalencarpenhacarvalho", PARITY_MODE, STOP_BITS);
+    wait for 20 * BIT_PERIOD; -- Pausa longa
+
+    report "=== Teste 6: Envio de String Continua ('danielalencarpenhacarvalho') ===";
+    -- Isso vai testar o comportamento de Start bit colado no Stop bit anterior
+    send_string(rx, "danielalencarpenhacarvalho", PARITY_MODE, STOP_BITS);
+    wait for 20 * BIT_PERIOD; -- Pausa longa
 
     wait for 500 us;
     report "=== Fim da Simulação ===";
