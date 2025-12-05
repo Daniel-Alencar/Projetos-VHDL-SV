@@ -123,8 +123,7 @@ begin
   -- 3.5 NOVO BLOCO: FILTRO DE IMAGEM
   img_filter_inst : entity work.image_filter
     generic map (
-      IMG_WIDTH  => 150, -- Tem que bater com o Python
-      IMG_HEIGHT => 100  -- Tem que bater com o Python (NOVO)
+      IMG_WIDTH  => 150 -- Tem que bater com o Python
     )
     port map (
       -- (sinais continuam iguais)
