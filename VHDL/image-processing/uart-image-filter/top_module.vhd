@@ -43,6 +43,11 @@ architecture rtl of top_module is
   signal ignore_error2  : std_logic;
   signal ignore_busy    : std_logic;
 
+  -- NOVOS SINAIS para conectar o Filtro
+  signal filter_out_data  : std_logic_vector(7 downto 0);
+  signal filter_out_valid : std_logic;
+  signal filter_out_ready : std_logic;
+
 begin
 
   -- 1. Gerador de Baud Rate (Lembre-se: 25MHz para Colorlight i9+)
@@ -100,33 +105,81 @@ begin
       busy         => ignore_busy
     );
 
-  -- 3. FIFO Intermediária 1 (TX)
+  -- 3. FIFO RX (TX do lado da FPGA, RX do lado da UART)
   fifo_rx_inst : entity work.fifo_UART
-    generic map ( DATA_WIDTH => 8, DEPTH => 4096 )
+    generic map ( DATA_WIDTH => 8, DEPTH => 4096 ) -- Mantendo o buffer grande!
     port map (
       clk          => clk,
       reset_n      => reset_n,
       axis_tdata   => s_axis_tdata,
       axis_tvalid  => s_axis_tvalid,
       axis_tready  => s_axis_tready,
+      -- A SAÍDA DA FIFO AGORA VAI PARA O FILTRO
       fifo_tdata   => fifo_tdata0,
       fifo_tvalid  => fifo_tvalid0,
-      fifo_tready  => fifo_tready0
+      fifo_tready  => fifo_tready0 
     );
 
-  -- 4. FIFO Intermediária 2 (RX)
+  -- 3.5 NOVO BLOCO: FILTRO DE IMAGEM
+  img_filter_inst : entity work.image_filter
+    generic map (
+      IMG_WIDTH  => 150 -- Tem que bater com o Python
+    )
+    port map (
+      -- (sinais continuam iguais)
+      clk           => clk,
+      reset_n       => reset_n,
+      s_axis_tdata  => fifo_tdata0,
+      s_axis_tvalid => fifo_tvalid0,
+      s_axis_tready => fifo_tready0,
+      m_axis_tdata  => filter_out_data,
+      m_axis_tvalid => filter_out_valid,
+      m_axis_tready => filter_out_ready
+    );
+
+  -- 4. FIFO TX (Buffer para saída)
   fifo_tx_inst : entity work.fifo_UART
     generic map ( DATA_WIDTH => 8, DEPTH => 4096 )
     port map (
       clk          => clk,
       reset_n      => reset_n,
-      axis_tdata   => fifo_tdata0,
-      axis_tvalid  => fifo_tvalid0,
-      axis_tready  => fifo_tready0,
+      -- A ENTRADA VEM DO FILTRO
+      axis_tdata   => filter_out_data,
+      axis_tvalid  => filter_out_valid,
+      axis_tready  => filter_out_ready,
+      
       fifo_tdata   => fifo_tdata1,
       fifo_tvalid  => fifo_tvalid1,
       fifo_tready  => fifo_tready1
     );
+
+  -- -- 3. FIFO Intermediária 1 (TX)
+  -- fifo_rx_inst : entity work.fifo_UART
+  --   generic map ( DATA_WIDTH => 8, DEPTH => 4096 )
+  --   port map (
+  --     clk          => clk,
+  --     reset_n      => reset_n,
+  --     axis_tdata   => s_axis_tdata,
+  --     axis_tvalid  => s_axis_tvalid,
+  --     axis_tready  => s_axis_tready,
+  --     fifo_tdata   => fifo_tdata0,
+  --     fifo_tvalid  => fifo_tvalid0,
+  --     fifo_tready  => fifo_tready0
+  --   );
+
+  -- -- 4. FIFO Intermediária 2 (RX)
+  -- fifo_tx_inst : entity work.fifo_UART
+  --   generic map ( DATA_WIDTH => 8, DEPTH => 4096 )
+  --   port map (
+  --     clk          => clk,
+  --     reset_n      => reset_n,
+  --     axis_tdata   => fifo_tdata0,
+  --     axis_tvalid  => fifo_tvalid0,
+  --     axis_tready  => fifo_tready0,
+  --     fifo_tdata   => fifo_tdata1,
+  --     fifo_tvalid  => fifo_tvalid1,
+  --     fifo_tready  => fifo_tready1
+  --   );
 
   -- 5. Lógica de Controle
   process(fifo_tvalid1, tx_busy)
